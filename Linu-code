@@ -30,7 +30,7 @@ STAR --runThreadN 60 --genomeDir /project/rna/STAR_index \
 #for  fastq.gz:Add this code for compressed format files 
 --readFilesIn ${i}1.paired.fastq \
 ${i}2.paired.fastq \
---outFileNamePrefix align_out/${i}.bam \
+--outFileNamePrefix bam/$(basename ${i}).bam \
 --outSAMtype BAM SortedByCoordinate \
 --outBAMsortingThreadN 60 \
 --quantMode TranscriptomeSAM GeneCounts ; done
