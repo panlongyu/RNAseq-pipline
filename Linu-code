@@ -23,6 +23,20 @@ cat *.fa > hg19.fa
 STAR --runMode genomeGenerate –genomeDir /project/rna/STAR_index/ --genomeFastaFiles /project/rna/STAR_index/Mus_musculus.GRCm38.dna.toplevel.fa --sjdbGTFfile /project/rna/ref/Mus_musculus.GRCm38.100.gtf
  --sjdbOverhang 149
  
+ 
+for i in /project/quant-seq/yafeng/raw_data/raw_data/*1.paired.fastq ; do i=${i%1.paired.fastq*};
+STAR --runThreadN 60 --genomeDir /project/rna/STAR_index \
+#--readFilesCommand zcat \
+#for  fastq.gz:Add this code for compressed format files 
+--readFilesIn ${i}1.paired.fastq \
+${i}2.paired.fastq \
+--outFileNamePrefix align_out/${i}.bam \
+--outSAMtype BAM SortedByCoordinate \
+--outBAMsortingThreadN 60 \
+--quantMode TranscriptomeSAM GeneCounts ; done
+
+ 
+ 
 for i in /project/quant-seq/yafeng/raw_data/yafeng/align_out/*.bam; do i=${i%.bam*}; featureCounts -T 60 -p -t exon -g gene_name -a '/project/rna/ref/Mus_musculus.GRCm38.100.gtf' -o ${i}.fea.txt ${i}.bam ; done
 for i in *.fea.txt; do i=${i%.fea.txt*}; cut -f 1,7 ${i}.fea.txt|grep -v '^#' > ${i}.rawcounts.txt ; done
 for i in *.rawcounts.txt; do i=${i%.rawcounts.txt*}; sed -i '1d' ${i}.rawcounts.txt ; done
