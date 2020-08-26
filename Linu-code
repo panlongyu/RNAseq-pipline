@@ -37,8 +37,19 @@ ${i}2.paired.fastq \
 
  
  
-for i in /project/quant-seq/yafeng/raw_data/yafeng/align_out/*.bam; do i=${i%.bam*}; featureCounts -T 60 -p -t exon -g gene_name -a '/project/rna/ref/Mus_musculus.GRCm38.100.gtf' -o ${i}.fea.txt ${i}.bam ; done
+for i in /project/quant-seq/yafeng/raw_data/yafeng/bam/*.bamAligned.sortedByCoord.out.bam; do i=${i%.bamAligned.sortedByCoord.out.bam*};
+featureCounts -T 60 -p -t exon -g gene_name -a '/project/rna/ref/Mus_musculus.GRCm38.100.gtf' -o ${i}.fea.txt ${i}.bamAligned.sortedByCoord.out.bam ; done
+
 for i in *.fea.txt; do i=${i%.fea.txt*}; cut -f 1,7 ${i}.fea.txt|grep -v '^#' > ${i}.rawcounts.txt ; done
 for i in *.rawcounts.txt; do i=${i%.rawcounts.txt*}; sed -i '1d' ${i}.rawcounts.txt ; done
 
+mkdir counts
+mv *rawcounts.txt counts
+cd counts
+awk '{print FILENAME"\t"$0}' * > tmp.txt
+
+#import Rstudio
+a=read.table('tmp.txt',sep = '\t',stringsAsFactors = F)
+library(reshape2)
+allcounts <- dcast(a,formula = V2~V1)
 
