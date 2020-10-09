@@ -13,12 +13,16 @@ wget ftp://ftp.ensembl.org/pub/current_gtf/mus_musculus/Mus_musculus.GRCm38.100.
 axel -n 20  ftp://ftp.ensembl.org/pub/release-90/fasta/mus_musculus/dna_index/Mus_musculus.GRCm38.dna.toplevel.fa.gz
 gunzip
 #human
-wget ftp://ftp.ensembl.org/pub/current_gtf/homo_sapiens/Homo_sapiens.GRCh38.90.gtf.gz##hg38
-wget ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz## hg19
-wegt http://hgdownload.cse.ucsc.edu/goldenPath/hg19/bigZips/chromFa.tar.gz ##hg19
-wget http://hgdownload.cse.ucsc.edu/goldenPath/hg38/bigZips/chromFa.tar.gz ##hg38
-tar -zxvf chromFa.tar.gz
-cat *.fa > hg19.fa
+wget ftp://ftp.ensembl.org/pub/current_gtf/homo_sapiens/Homo_sapiens.GRCh38.101.gtf.gz
+wget ftp://ftp.ensembl.org/pub/release-90/fasta/homo_sapiens/dna_index/Homo_sapiens.GRCh38.dna.toplevel.fa.gz
+gunzip
+
+#wget ftp://ftp.ensembl.org/pub/current_gtf/homo_sapiens/Homo_sapiens.GRCh38.90.gtf.gz##hg38
+#wget ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz## hg19
+#wegt http://hgdownload.cse.ucsc.edu/goldenPath/hg19/bigZips/chromFa.tar.gz ##hg19
+#wget http://hgdownload.cse.ucsc.edu/goldenPath/hg38/bigZips/chromFa.tar.gz ##hg38
+#tar -zxvf chromFa.tar.gz
+#cat *.fa > hg19.fa
 
 STAR --runMode genomeGenerate –genomeDir /project/rna/STAR_index/ --genomeFastaFiles /project/rna/STAR_index/Mus_musculus.GRCm38.dna.toplevel.fa --sjdbGTFfile /project/rna/ref/Mus_musculus.GRCm38.100.gtf
  --sjdbOverhang 149
