@@ -1,0 +1,161 @@
+cd /path/to/data/directory
+mkdir fastqc_results
+for i in $(ls fastq/*.fq.gz); do
+
+      fastqc \
+      -o fastqc_results \
+      $i &
+
+done
+
+
+wait
+
+
+################
+###  MultiQC  ###
+################
+
+cd fastqc_results
+multiqc . 
+
+###############################################################################
+###          MAP READS TO REFERENCE                                       #####
+###############################################################################
+
+
+######################################
+###  BUILD A HISAT2 REFERENCE     ####
+######################################
+
+
+
+
+
+###########################
+###  ALIGN WITH HISAT2  ###
+###########################
+mkdir hisat2_results
+
+#map all the small files
+ for i in $(ls fastq/*.clean.fq.gz.1M_reads.fq.gz); do
+
+    file=${i#fastq/}
+    sample=${file%.clean.fq.gz.1M_reads.fq.gz}
+   #Single-end read
+   hisat2 -p 4 \
+    -x references/hisat2_build/mm10 \
+    -U $i \
+    -S hisat2_results/$sample.1M.sam \
+    --summary-file hisat2_results/$sample.hisat2_summary.txt
+
+
+ done
+
+for i in /project/quant-seq/yafeng/raw_data/raw_data/*1.fq.gz ; do i=${i%1.fq.gz*}; trimmomatic PE -threads 60 ${i}1.fq.gz ${i}2.fq.gz ${i}1.paired.fastq ${i}1.unpaired.fastq ${i}2.paired.fastq ${i}2.unpaired.fastq 
+ILLUMINACLIP:/biostack/tools/fastx_utils/Trimmomatic-0.38/adapters/TruSeq3-PE-2.fa:2:30:10:1:true LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:51 TOPHRED33; done
+#Select the number of threads based on conditions
+
+for i in /project/rna/epo/raw_data/*.fq.gz; do i=${i%.fq.gz*}; hisat2 -p 60 \
+    -x /project/rna/epo/raw_data/ref/grch38/genome \
+    -U ${i}.fq.gz \
+    -S  /project/rna/epo/raw_data/hisat2_results/$(basename ${i}).sam \
+    --summary /project/rna/epo/raw_data/hisat2_results/$(basename ${i}).hisat2_summary.txt
+done
+
+
+
+#map  the large file
+ for i in $(ls fastq/*.fq.gz); do
+
+    file=${i#fastq/}
+    sample=${file%.clean.fq.gz}
+   #Single-end read
+   hisat2 -p 60 \
+    -x /project/rna/epo/raw_data/ref/grch38/genome \
+    -U $i \
+    -S hisat2_results/$sample.10M.sam \
+    --summary-file hisat2_results/$sample.10M.hisat2_summary.txt
+
+
+
+ done
+
+
+
+
+############################
+####   CONVERT TO BAM   ####
+
+############################
+
+
+for i in $(ls hisat2_results/*.sam); do
+
+    file=${i#hisat2_results/}
+    sample=${file%.sam}
+ 
+ 
+ # This is how it was done in a older version of samtools  (Version: 0.1.19-44428cd)
+  #samtools view -bS -o hisat2_results/$sample.bam hisat2_results/$sample.sam 
+  #samtools sort  hisat2_results/$sample.bam hisat2_results/$sample.sorted
+  
+ # This is how it should be done in the version that is used in our conda enviroment (Version: 1.10 (using htslib 1.10.2))
+  samtools sort -@ 60 -o hisat2_results/$sample.sorted.bam hisat2_results/$sample.sam
+  samtools index -@ 60 hisat2_results/$sample.sorted.bam
+  samtools flagstat -@ 60 hisat2_results/$sample.sorted.bam > $sample.sorted.flagstat
+
+done
+
+############################
+####   REMOVE SAM FILES ####
+############################
+
+
+# Remove the intermediate sam and bamfiles.
+for i in $(ls hisat2_results/*.sorted.bam); do
+
+    file=${i#hisat2_results/}
+    sample=${file%.sorted.bam}
+
+ if test -f "hisat2_results/$sample.sorted.bam"; then
+    echo "$sample.sorted.bam exists. Removing $sample.sam and $sample.bam"
+    rm hisat2_results/$sample.sam
+
+    # This intermediate step is no longer needed anymore 
+    #rm hisat2_results/$sample.bam
+ fi
+
+done
+2020年•NBIS•SciLifeLab
+
+mkdir featureCounts
+
+featureCounts -T 60 -s 2 -t exon -g gene_id \
+-a /project/rna/ref/hg38.gtf \
+-o featureCounts/allSamples.featureCounts \
+/project/rna/epo/raw_data/hisat2_results/*.bam \
+> featureCounts/allSamples.featureCounts.log
+
+
+featureCounts -T 60 -s 2 -t exon -g gene_id -a /project/rna/ref/hg38.gtf -o featureCounts/allSamples.featureCounts /project/rna/epo/raw_data/hisat2_results/*.bam > featureCounts/allSamples.featureCounts.log
+
+featureCounts -T 60 -s 2 -t exon -g gene_id \
+-a references/annotations/Mus_musculus.GRCm38.101.gtf \
+-o featureCounts/allSamples.featureCounts \
+hisat2_results/*1M.sorted.bam \
+> featureCounts/allSamples.featureCounts.log
+
+
+for i in /project/rna/epo/raw_data/hisat2_results/*1.sorted.bam; do i=${i%.sorted.bam*};
+featureCounts -T 60 -s 2 -t exon -g gene_name -a '/project/rna/ref/hg38.gtf' -o ${i}.fea.txt ${i}.sorted.bam ; done 
+
+for i in /project/quant-seq/yafeng/raw_data/yafeng/bam/*.bamAligned.sortedByCoord.out.bam; do i=${i%.bamAligned.sortedByCoord.out.bam*};
+featureCounts -T 60 -p -t exon -g gene_name -a '/project/rna/ref/Mus_musculus.GRCm38.100.gtf' -o ${i}.fea.txt ${i}.bamAligned.sortedByCoord.out.bam ; done
+
+
+hisat2 -p 60  -x /project/rna/epo/raw_data/ref/grch38/genome \
+  -U AC002A_1.fq.gz \
+  -S hisat2_results/AC002A_1.sam \
+  --summary-file hisat2_results/AC002A_1.hisat2_summary.txt
+             
